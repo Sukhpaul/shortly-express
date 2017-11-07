@@ -5,8 +5,16 @@ const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
 const models = require('./models');
+const parseCookies = require('./middleware/cookieParser.js');
 
 const app = express();
+
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10 // Seconds.
+};
 
 app.set('views', `${__dirname}/views`);
 app.set('view engine', 'ejs');
@@ -14,8 +22,44 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(parseCookies);
 
 
+app.post('/signup', (req, res, next) => {
+  var username = req.body.username;
+  var password = req.body.password;
+  //if user exist redirect to signup
+  models.Users.get({username})
+  .then((user) => {
+    if (user) {
+      res.redirect('/signup');
+    } else { 
+      models.Users.create({username, password})
+      .then(() => {
+        res.redirect('/');
+      });
+    }
+  });
+
+});
+
+
+app.post('/login', (req, res, next) => {
+  var username = req.body.username;
+  var password = req.body.password;
+  var user = models.Users.get({username})
+  .then((user) => {
+    if (user) {
+      if (models.Users.compare(password, user.password, user.salt)) {
+        res.redirect('/');
+      } else {
+        res.redirect('/login');
+      }
+    } else {
+      res.redirect('/login');
+    }
+  });
+});
 
 app.get('/', 
 (req, res) => {

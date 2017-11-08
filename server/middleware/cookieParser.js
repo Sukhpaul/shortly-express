@@ -1,3 +1,5 @@
+const Session = require('./auth.js');
+
 const parseCookies = (req, res, next) => {
   if (req.headers.cookie !== undefined) {
     var c = req.headers.cookie.split('; ');
@@ -6,7 +8,7 @@ const parseCookies = (req, res, next) => {
       req.cookies[keyValue[0]] = keyValue[1]; 
     }
   }
-  next();
+  Session.createSession(req, res, next);
 };
 
 module.exports = parseCookies;
